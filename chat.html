@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Content Safety Check</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 1rem;
+      background: #f0f2f5;
+      color: #333;
+    }
+
+    .container {
+      background: white;
+      padding: 2.5rem;
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+      border: 1px solid #e0e0e0;
+    }
+
+    h2 {
+      color: #1a1a1a;
+      margin-bottom: 2rem;
+      font-size: 1.8rem;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    form {
+      display: flex;
+      flex-direction: row;
+      /* Changed to row for chat-style layout */
+      gap: 0.5rem;
+      /* Reduced gap for compactness */
+      align-items: center;
+      /* Align items vertically */
+    }
+
+    .textarea-container {
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 0.5rem 1rem;
+      /* Reduced padding for compactness */
+      background: #fafafa;
+      transition: all 0.2s ease;
+      position: relative;
+      min-height: 40px;
+      /* Reduced min-height */
+      flex-grow: 1;
+      /* Allow textarea to grow and fill space */
+    }
+
+    .textarea-container:focus-within {
+      border-color: #2196f3;
+      background: white;
+      box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 40px;
+      /* Reduced min-height */
+      padding: 8px 40px 8px 8px;
+      /* Adjusted padding for compactness */
+      border: none;
+      background: transparent;
+      resize: vertical;
+      font-size: 14px;
+      /* Slightly smaller font size */
+      line-height: 1.4;
+      /* Adjusted line height */
+      color: #333;
+    }
+
+    textarea:focus {
+      outline: none;
+      box-shadow: none;
+    }
+
+    .attachment-wrapper {
+      position: absolute;
+      right: 8px;
+      /* Adjusted position for compactness */
+      bottom: 8px;
+      /* Adjusted position for compactness */
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      /* Reduced gap */
+      z-index: 2;
+    }
+
+    .attach-btn {
+      background: #e3f2fd;
+      width: 32px;
+      /* Reduced size */
+      height: 32px;
+      /* Reduced size */
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      font-size: 14px;
+      /* Smaller icon size */
+    }
+
+    .attach-btn:hover {
+      background: #2196f3;
+      transform: scale(1.05);
+    }
+
+    .attach-btn input[type="file"] {
+      opacity: 0;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    button[type="submit"] {
+      background: #2196f3;
+      color: white;
+      padding: 8px 16px;
+      /* Reduced padding for compactness */
+      border: none;
+      border-radius: 20px;
+      /* More rounded corners for chat-style */
+      font-size: 14px;
+      /* Smaller font size */
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      height: 40px;
+      /* Fixed height for alignment */
+    }
+
+    button[type="submit"]:hover {
+      background: #1976d2;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+    }
+
+    .warning-container {
+      display: none;
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 16px 24px;
+      background: #ff4757;
+      color: white;
+      font-size: 14px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(255, 71, 87, 0.25);
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+      }
+
+      to {
+        transform: translateX(0);
+      }
+    }
+
+    .loader {
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #2196f3;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .file-input-label {
+      display: block;
+      margin-top: 1rem;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .post-container {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background: #f8f9fa;
+      border-radius: 12px;
+      border: 1px solid #e0e0e0;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .container {
+        padding: 1.5rem;
+        margin: 1rem;
+      }
+
+      textarea {
+        min-height: 35px;
+        /* Adjusted for mobile */
+        font-size: 13px;
+        /* Smaller font size for mobile */
+      }
+
+      button[type="submit"] {
+        width: auto;
+        /* Allow button to shrink */
+        padding: 6px 14px;
+        /* Adjusted padding for mobile */
+        font-size: 14px;
+      }
+    }
+
+    /* Additional styles for file info */
+    .file-info {
+      font-size: 14px;
+      color: #666;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: none;
+    }
+
+    .attach-btn:hover .file-info {
+      display: inline;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h2>Check Content Safety</h2>
+    <form id="analysisForm" enctype="multipart/form-data">
+      <div class="textarea-container">
+        <div class="attachment-wrapper">
+          <span class="attach-btn">
+            <span>🖼</span>
+            <span id="fileInfo" class="file-info"></span>
+            <input
+              id="fileInput"
+              type="file"
+              name="file"
+              accept="image/*, video/*"
+              style="display: none" />
+          </span>
+        </div>
+        <textarea name="text" placeholder="Enter text to check..."></textarea>
+      </div>
+      <button type="submit">Check</button>
+    </form>
+    <div class="warning-container" id="warningContainer"></div>
+    <div class="post-container"></div>
+  </div>
+
+  <script>
+    document
+      .getElementById("fileInput")
+      .addEventListener("change", function(e) {
+        const fileInfo = document.getElementById("fileInfo");
+        const wrapper = document.querySelector(".attachment-wrapper");
+        if (this.files.length > 0) {
+          fileInfo.textContent = this.files[0].name;
+          wrapper.classList.add("has-file");
+        } else {
+          wrapper.classList.remove("has-file");
+        }
+      });
+    document
+      .querySelector(".attach-btn")
+      .addEventListener("click", function() {
+        document.getElementById("fileInput").click();
+      });
+    document
+      .getElementById("analysisForm")
+      .addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearWarnings();
+        showLoading();
+
+        const formData = new FormData(e.target);
+        const postContainer = document.querySelector(".post-container");
+        postContainer.innerHTML = ""; // Clear previous content
+
+        try {
+          const response = await fetch("api.php", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          processAnalysisResults(data, formData);
+        } catch (error) {
+          console.error("Error:", error);
+          showWarning(`Error: ${error.message}`);
+        } finally {
+          hideLoading();
+        }
+      });
+
+    function processAnalysisResults(data, formData) {
+      let hasWarnings = false;
+
+      // Image analysis warnings
+      if (data.image_analysis?.responses?.[0]?.safeSearchAnnotation) {
+        const safeSearch =
+          data.image_analysis.responses[0].safeSearchAnnotation;
+        if (checkSafetyLevel(safeSearch, "adult", "Adult content (Image)"))
+          hasWarnings = true;
+        if (
+          checkSafetyLevel(safeSearch, "violence", "Violent content (Image)")
+        )
+          hasWarnings = true;
+        if (checkSafetyLevel(safeSearch, "racy", "Racy content (Image)"))
+          hasWarnings = true;
+        if (
+          checkSafetyLevel(safeSearch, "medical", "Medical content (Image)")
+        )
+          hasWarnings = true;
+        if (checkSafetyLevel(safeSearch, "spoof", "Spoofed content (Image)"))
+          hasWarnings = true;
+      }
+
+      // Video analysis warnings
+      if (
+        data.video_analysis?.annotationResults?.[0]?.safeSearchAnnotations
+      ) {
+        const videoSafeSearch =
+          data.video_analysis.annotationResults[0].safeSearchAnnotations;
+        for (let frame of videoSafeSearch) {
+          if (checkSafetyLevel(frame, "adult", "Adult content (Video)"))
+            hasWarnings = true;
+          if (checkSafetyLevel(frame, "violence", "Violent content (Video)"))
+            hasWarnings = true;
+          if (checkSafetyLevel(frame, "racy", "Racy content (Video)"))
+            hasWarnings = true;
+          if (checkSafetyLevel(frame, "medical", "Medical content (Video)"))
+            hasWarnings = true;
+          if (checkSafetyLevel(frame, "spoof", "Spoofed content (Video)"))
+            hasWarnings = true;
+        }
+      }
+
+      // Text analysis warnings
+      if (data.text_analysis?.documentSentiment) {
+        const sentiment = data.text_analysis.documentSentiment;
+        if (sentiment.score < -0.5) {
+          showWarning("Warning: Highly negative text detected!");
+          hasWarnings = true;
+        }
+      }
+
+      // If no warnings, display uploaded files
+      if (!hasWarnings) {
+        displayFiles(formData);
+      }
+    }
+
+    function checkSafetyLevel(safeSearch, category, label) {
+      const levels = ["LIKELY", "VERY_LIKELY"];
+      if (levels.includes(safeSearch[category])) {
+        showWarning(`Warning: Potential ${label} detected!`);
+        return true; // Warning detected
+      }
+      return false; // No warning
+    }
+
+    function showWarning(message) {
+      warningContainer.style.display = "block";
+      const warning = document.createElement("div");
+      warning.className = "warning-message";
+      warning.innerHTML = `⚠️ ${message}`;
+      warningContainer.appendChild(warning);
+
+      setTimeout(() => {
+        warning.remove();
+        if (!warningContainer.hasChildNodes()) {
+          warningContainer.style.display = "none";
+        }
+      }, 5000);
+    }
+
+    function clearWarnings() {
+      warningContainer.innerHTML = "";
+      warningContainer.style.display = "none";
+    }
+
+    function showLoading() {
+      document.querySelector("button").innerHTML =
+        '<div class="loader"></div> Analyzing...';
+    }
+
+    function hideLoading() {
+      document.querySelector("button").innerHTML = "Check";
+    }
+
+    function displayFiles(formData) {
+      const postContainer = document.querySelector(".post-container");
+      postContainer.innerHTML = ""; // Clear previous content
+
+      // Display text if entered
+      const text = formData.get("text");
+      if (text) {
+        const textDiv = document.createElement("div");
+        textDiv.className = "text-preview";
+        textDiv.textContent = `📜 Text: ${text}`;
+        postContainer.appendChild(textDiv);
+      }
+
+      // Display file if uploaded
+      const file = formData.get("file");
+      if (file && file.name) {
+        const fileType = file.type.split("/")[0];
+
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "file-preview";
+
+        if (fileType === "image") {
+          const img = document.createElement("img");
+          img.src = URL.createObjectURL(file);
+          img.alt = "Uploaded Image";
+          img.style.maxWidth = "300px";
+          fileDiv.appendChild(img);
+        } else if (fileType === "video") {
+          const video = document.createElement("video");
+          video.src = URL.createObjectURL(file);
+          video.controls = true;
+          video.style.maxWidth = "300px";
+          fileDiv.appendChild(video);
+        } else {
+          fileDiv.textContent = `📄 File Uploaded: ${file.name}`;
+        }
+
+        postContainer.appendChild(fileDiv);
+      }
+    }
+
+    document
+      .getElementById("fileInput")
+      .addEventListener("change", function(e) {
+        const fileInfo = document.getElementById("fileInfo");
+        if (this.files && this.files.length > 0) {
+          fileInfo.textContent = this.files[0].name;
+          fileInfo.style.display = "inline";
+        } else {
+          fileInfo.style.display = "none";
+        }
+      });
+  </script>
+</body>
+
+</html>
