@@ -2,7 +2,7 @@
 <?php
 $host = "34.174.116.174"; // Your Cloud SQL Public IP
 $user = "root";           // Default MySQL root user
-$pass = "";               // No password (if allowed)
+$pass = "yUQ|1za5DdzK=aiX";               // No password (if allowed)
 $dbname = "ai-social-world"; // Your database name
 
 // Create connection
